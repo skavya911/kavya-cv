@@ -1,0 +1,515 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Kavya Shah | Interactive CV</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: #020617;
+    color: white;
+    overflow: hidden;
+}
+
+h1, h2 {
+    font-family: 'Poppins', sans-serif;
+}
+
+canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -1;
+}
+
+.center {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.box {
+    max-width: 900px;
+    width: 100%;
+    padding: 50px;
+    border-radius: 20px;
+    text-align: center;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    position: relative;
+}
+
+.back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    background: #1e293b;
+}
+.back-btn:hover {
+    background: #3b82f6;
+}
+
+.profile-text {
+    margin-top: 20px;
+    font-size: 16px;
+    line-height: 1.8;
+    color: #cbd5e1;
+}
+
+button {
+    margin-top: 25px;
+    padding: 12px 30px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, #3b82f6, #9333ea);
+    color: white;
+    cursor: pointer;
+}
+
+.button-grid {
+    margin-top: 35px;
+}
+.button-grid button {
+    margin: 10px;
+    background: #1e293b;
+}
+
+.edu-row {
+    display: flex;
+    justify-content: space-between;
+    text-align: left;
+    margin-top: 20px;
+}
+
+.edu-title {
+    font-weight: 600;
+}
+
+.edu-sub {
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
+/* NEW: learning text */
+.edu-learn {
+    margin-top: 5px;
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.skill-row {
+    display: flex;
+    justify-content: space-between;
+    text-align: left;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.skill-title {
+    font-weight: 600;
+    width: 30%;
+}
+
+.skill-items {
+    width: 65%;
+}
+
+.tooltip {
+    position: relative;
+    cursor: pointer;
+}
+.tooltip:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: 140%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111827;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+a {
+    color: #38bdf8;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+.hidden { display: none; }
+
+</style>
+</head>
+
+<body>
+
+<canvas id="bg"></canvas>
+
+<!-- LANDING -->
+<div id="landing" class="center">
+<div class="box">
+<h1>KAVYA SHAH</h1>
+<p>he / him • Economics & Analytics</p>
+<p>
+Mumbai | shahkavya9116@gmail.com | +91 8160438137 |
+<a href="https://www.linkedin.com/in/kavya-shah-151178267/" target="_blank">LinkedIn</a>
+</p>
+<button onclick="openCV()">View CV</button>
+</div>
+</div>
+
+<!-- PROFILE -->
+<div id="profile" class="center hidden">
+<div class="box">
+
+<h2>Profile</h2>
+
+<p class="profile-text">
+<p class="profile-text">
+Analytical and detail-oriented Economics & Analytics student at SVKM’s NM College with a strong foundation in economic theory and data-driven decision-making. Skilled in Python (Pandas, NumPy, Seaborn), SQL, Power BI, and Excel for data wrangling, visualization, and extracting actionable insights. Experienced through internships and projects in applying analytical and economic concepts to real-world business problems. Adept at translating complex data into meaningful insights, with a keen interest in solving business and market challenges using data.
+</p>
+</p>
+
+<div class="button-grid">
+<button onclick="showPage('education')">EDUCATION</button>
+<button onclick="showPage('skills')">SKILLS</button>
+<button onclick="showPage('experience')">EXPERIENCE</button>
+<button onclick="showPage('projects')">PROJECTS</button>
+<button>HOBBIES</button>
+</div>
+
+</div>
+</div>
+
+<!-- EDUCATION -->
+<div id="education" class="center hidden">
+<div class="box">
+
+<button class="back-btn" onclick="showPage('profile')">← Back</button>
+
+<h2>Education</h2>
+
+<div class="edu-row">
+<div>
+<div class="edu-title">
+<a href="https://nmcollege.in/academics/bcom-economics-analytics" target="_blank">
+Economics & Analytics
+</a>
+</div>
+
+<div class="edu-sub">
+SVKM’s NM College, Mumbai 
+<a href="https://maps.google.com/?q=NM+College+Mumbai" target="_blank">📍</a>
+</div>
+
+<div class="edu-learn">
+– Studying core subjects including Microeconomics, Macroeconomics, Statistics, and Data Analytics.<br>
+– Gaining hands-on experience in data analysis using Python (Pandas, NumPy) and visualization tools.<br>
+– Applying economic theories to real-world business and market scenarios through projects and case studies.<br>
+– Developing strong analytical, quantitative, and problem-solving skills for data-driven decision making.
+</div>
+</div>
+
+<div>2024 – 2027</div>
+</div>
+
+<div class="edu-row">
+<div>
+<div class="edu-title">
+<a href="https://www.radiant.edu.in/" target="_blank">
+HSC – Commerce (Applied Mathematics)
+</a>
+</div>
+
+<div class="edu-sub">
+Radiant English Academy, Surat 
+<a href="https://maps.google.com/?q=Radiant+Academy+Surat" target="_blank">📍</a>
+</div>
+
+<div class="edu-learn">
+– Built strong foundation in Mathematics, Accounts, Economics, and Business Studies.<br>
+– Developed logical reasoning, numerical analysis, and quantitative problem-solving abilities.<br>
+– Gained understanding of financial concepts, business operations, and economic fundamentals.<br>
+– Strengthened academic discipline and analytical thinking skills.
+</div>
+</div>
+
+<div>2022 – 2024</div>
+</div>
+
+</div>
+</div>
+<!-- SKILLS (UNCHANGED) -->
+<div id="skills" class="center hidden">
+<div class="box">
+
+<button class="back-btn" onclick="showPage('profile')">← Back</button>
+
+<h2>Skills</h2>
+
+<div class="skill-row">
+<div class="skill-title">Programming</div>
+<div class="skill-items">
+<span class="tooltip" data-tip="Programming language for data analysis">Python</span> ·
+<span class="tooltip" data-tip="Data manipulation library">Pandas</span> ·
+<span class="tooltip" data-tip="Numerical computing">NumPy</span> ·
+<span class="tooltip" data-tip="Data visualization">Seaborn</span> ·
+<span class="tooltip" data-tip="Graph plotting">Matplotlib</span>
+</div>
+</div>
+
+<div class="skill-row">
+<div class="skill-title">Databases</div>
+<div class="skill-items">
+<span class="tooltip" data-tip="Query language">SQL</span> ·
+<span class="tooltip" data-tip="Database system">PostgreSQL</span>
+</div>
+</div>
+
+<div class="skill-row">
+<div class="skill-title">Visualisation</div>
+<div class="skill-items">
+<span class="tooltip" data-tip="Dashboard tool">Power BI</span> ·
+<span class="tooltip" data-tip="Spreadsheet analysis">Excel</span>
+</div>
+</div>
+
+<div class="skill-row">
+<div class="skill-title">Analytical</div>
+<div class="skill-items">
+<span class="tooltip" data-tip="Exploratory Data Analysis">EDA</span> ·
+<span class="tooltip" data-tip="Cleaning data">Data Wrangling</span> ·
+<span class="tooltip" data-tip="Statistical insights">Statistical Thinking</span> ·
+<span class="tooltip" data-tip="Business decision making">Business Analysis</span>
+</div>
+</div>
+
+<div class="skill-row">
+<div class="skill-title">Soft Skills</div>
+<div class="skill-items">
+<span class="tooltip" data-tip="Accuracy in work">Attention to Detail</span> ·
+<span class="tooltip" data-tip="Handling change">Adaptability</span> ·
+<span class="tooltip" data-tip="Effective communication">Communication</span> ·
+<span class="tooltip" data-tip="Managing time">Time Management</span> ·
+<span class="tooltip" data-tip="Handling pressure">Resilience</span>
+</div>
+</div>
+
+<div class="skill-row">
+<div class="skill-title">Languages</div>
+<div class="skill-items">
+English · Gujarati · Hindi
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- EXPERIENCE -->
+<div id="experience" class="center hidden">
+<div class="box">
+
+<button class="back-btn" onclick="showPage('profile')">← Back</button>
+
+<h2>Experience</h2>
+
+<!-- GOZOOP -->
+<div class="edu-row">
+<div>
+<div class="edu-title">
+<a href="https://www.gozoop.com/" target="_blank">
+BRM Trainee – Gozoop Group
+</a>
+</div>
+
+<div class="edu-sub">
+Internship, Mumbai (Hybrid)
+</div>
+
+<div class="edu-learn">
+– Monitored and analyzed customer sentiment across multiple digital platforms to evaluate brand perception and engagement trends.<br>
+– Assisted in execution and coordination of brand campaigns, ensuring smooth communication between internal teams and stakeholders.<br>
+– Supported client servicing activities by preparing reports, tracking campaign performance, and maintaining workflow efficiency.<br>
+– Gained hands-on exposure to digital marketing strategies, brand management, and real-time business decision processes.
+</div>
+</div>
+
+<div>Dec 2024 – Jan 2025</div>
+</div>
+
+<!-- MAHAVIR -->
+<div class="edu-row">
+<div>
+<div class="edu-title">
+<a href="https://seemaplastics.com/" target="_blank">
+Summer Intern – Mahavir Plastic Agency
+</a>
+</div>
+
+<div class="edu-sub">
+Surat
+</div>
+
+<div class="edu-learn">
+– Managed and analyzed inventory data to improve stock tracking accuracy and operational efficiency.<br>
+– Assisted in retail and B2B sales operations, ensuring smooth transaction handling and customer interaction.<br>
+– Coordinated between inventory and sales functions to optimize product availability and reduce delays.<br>
+– Developed practical understanding of supply chain processes, sales strategy, and day-to-day business operations.
+</div>
+</div>
+
+<div>Apr 2025 – Jul 2025</div>
+</div>
+
+</div>
+</div>
+
+<!-- PROJECTS -->
+<div id="projects" class="center hidden">
+<div class="box">
+
+<button class="back-btn" onclick="showPage('profile')">← Back</button>
+
+<h2>Projects</h2>
+
+<!-- PROJECT 1 -->
+<div class="edu-row">
+<div>
+<div class="edu-title">
+Cyber Crime Analysis in India (2017–2022)
+</div>
+
+<div class="edu-learn">
+– Performed end-to-end data wrangling and EDA on a district-wise cybercrime dataset with 5,322 rows and 45 crime categories using Python, Pandas, and Matplotlib.<br>
+– Identified yearly trends showing a consistent rise in total offences from 7,976 (2017) to 33,786 (2022), with cheating impersonation and identity theft as the top crime categories.<br>
+– Conducted state-wise analysis revealing Telangana and Maharashtra as the highest-crime states; tracked financial fraud trends (OTP, ATM, online banking, card fraud) across six years.<br>
+– Designed a What-If scenario analysis on demonetization’s impact on counterfeit currency using line plots.<br><br>
+
+<a href="https://colab.research.google.com/drive/1PFQq9sIH413Xp2iMwLSeTnRBF-WwsUwB" target="_blank">
+View Project →
+</a>
+</div>
+</div>
+</div>
+
+<!-- PROJECT 2 -->
+<div class="edu-row">
+<div>
+<div class="edu-title">
+WHO Global Air Quality Data Analysis
+</div>
+
+<div class="edu-learn">
+– Cleaned and profiled a WHO dataset with 32,000+ rows, handling missing values through forward-fill imputation.<br>
+– Engineered pollution categories (Clean → Highly Polluted) using quartile-based binning.<br>
+– Identified top 10 polluted cities and found strong correlation (r≈0.87) between PM2.5 and PM10.<br>
+– Analyzed seasonal forest fire impacts using time-series plots.<br><br>
+
+<a href="https://colab.research.google.com/drive/1BIMRKQDilxPZ3XPUgp_n8vHRVhVyd1Py" target="_blank">
+View Project →
+</a>
+</div>
+</div>
+</div>
+
+<!-- PROJECT 3 -->
+<div class="edu-row">
+<div>
+<div class="edu-title">
+Economics Research – Video Production & Analysis
+</div>
+
+<div class="edu-learn">
+– Collaborated on an economics research project involving data analysis and structured presentation.<br>
+– Led full video production: scripting, recording, and post-production.<br>
+– Translated complex economic concepts into engaging visual storytelling.<br><br>
+
+<a href="https://drive.google.com/file/d/1SjSTwyiQJ12FSz5enSVoUT-V4o3So1x1/view" target="_blank">
+View Project →
+</a>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<script>
+function openCV() {
+document.getElementById("landing").classList.add("hidden");
+document.getElementById("profile").classList.remove("hidden");
+}
+
+function showPage(page) {
+document.getElementById("profile").classList.add("hidden");
+document.getElementById("education").classList.add("hidden");
+document.getElementById("skills").classList.add("hidden");
+document.getElementById("experience").classList.add("hidden");
+document.getElementById("projects").classList.add("hidden");
+
+document.getElementById(page).classList.remove("hidden");
+}
+
+/* BACKGROUND (UNCHANGED) */
+const canvas = document.getElementById("bg");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let texts = [
+"print()", "pd.DataFrame()", "pd.sort_values()", ".groupby()",
+"SELECT", "WHERE", "JOIN", "UPPER()", "LOWER()", "LENGTH()",
+"SUBSTRING()", "LEFT()", "RIGHT()", "TRIM()", "CONCAT()",
+"CONCAT_WS()", "REPLACE()", "REVERSE()", "POSITION()", "ASCII()", "CHR()",
+"Z-score", "stats.zscore()", "IQR", "Q1", "Q3",
+"StandardScaler()", "MinMaxScaler()", "RobustScaler()",
+"cut()", "qcut()", "clip()", "axis=1",
+"EDA", "Scaling", "Discretization",
+"Mean", "Median", "Outliers", "Normalization",
+"Feature Engineering", "Regression", "Clustering"
+];
+
+let particles = [];
+
+for (let i = 0; i < 120; i++) {
+particles.push({
+x: Math.random() * canvas.width,
+y: Math.random() * canvas.height,
+text: texts[Math.floor(Math.random() * texts.length)],
+speedY: Math.random() * 0.8 + 0.3
+});
+}
+
+function animate() {
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+ctx.fillStyle = "rgba(255,255,255,0.12)";
+ctx.font = "12px monospace";
+
+particles.forEach(p => {
+ctx.fillText(p.text, p.x, p.y);
+p.y += p.speedY;
+
+if (p.y > canvas.height) p.y = 0;
+});
+
+requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+
+</body>
+</html>
+
