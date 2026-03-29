@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -186,7 +185,7 @@ Analytical and detail-oriented Economics & Analytics student at SVKM’s NM Coll
 <button onclick="showPage('skills')">SKILLS</button>
 <button onclick="showPage('experience')">EXPERIENCE</button>
 <button onclick="showPage('projects')">PROJECTS</button>
-<button>HOBBIES</button>
+<button onclick="showPage('hobbies')">HOBBIES & INTERESTS</button>
 </div>
 
 </div>
@@ -444,6 +443,52 @@ View Project →
 
 </div>
 </div>
+<!-- HOBBIES -->
+<div id="hobbies" class="center hidden">
+<div class="box">
+
+<button class="back-btn" onclick="showPage('profile')">← Back</button>
+
+<h2>Hobbies & Interests</h2>
+
+<!-- VIDEO EDITING -->
+<div class="edu-row">
+<div>
+
+<div class="edu-title">
+Video Editing & Visual Storytelling
+</div>
+
+<div class="edu-learn">
+– Passionate about cinematic video editing with hands-on experience in scripting, editing, and post-production workflows.<br>
+– Created multiple edited videos showcasing storytelling, transitions, and visual composition techniques.<br>
+– Skilled in transforming raw footage into engaging content with strong attention to detail and narrative flow.<br>
+– Demonstrates creativity, visual thinking, and content presentation skills relevant to modern digital platforms.
+</div>
+
+</div>
+</div>
+
+<!-- HIP HOP -->
+<div class="edu-row">
+<div>
+
+<div class="edu-title">
+Hip-Hop Culture & Music Engagement
+</div>
+
+<div class="edu-learn">
+– Strong interest in hip-hop culture, actively attending live concerts and music events.<br>
+– Engaged with artists and communities, documenting experiences through photos and videos.<br>
+– Developed exposure to creative industries, cultural trends, and audience engagement.<br>
+– Reflects adaptability, creativity, and appreciation for artistic expression and storytelling.
+</div>
+
+</div>
+</div>
+
+</div>
+</div>
 
 <script>
 function openCV() {
@@ -457,6 +502,7 @@ document.getElementById("education").classList.add("hidden");
 document.getElementById("skills").classList.add("hidden");
 document.getElementById("experience").classList.add("hidden");
 document.getElementById("projects").classList.add("hidden");
+document.getElementById("hobbies").classList.add("hidden");
 
 document.getElementById(page).classList.remove("hidden");
 }
