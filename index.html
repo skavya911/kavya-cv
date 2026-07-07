@@ -1,12 +1,17 @@
-<!DOCTYPE html>
+import http.server
+import socketserver
+
+PORT = 8000
+
+HTML = """<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kavya Shah | Interactive CV</title>
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-
 <style>
+* { box-sizing: border-box; }
 body {
     margin: 0;
     font-family: 'Inter', sans-serif;
@@ -14,27 +19,22 @@ body {
     color: white;
     overflow: hidden;
 }
-
-h1, h2 {
-    font-family: 'Poppins', sans-serif;
-}
-
+h1, h2 { font-family: 'Poppins', sans-serif; }
 canvas {
     position: fixed;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     z-index: -1;
 }
-
 .center {
     height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow-y: auto;
+    padding: 20px;
 }
-
 .box {
-    max-width: 900px;
+    max-width: 920px;
     width: 100%;
     padding: 50px;
     border-radius: 20px;
@@ -43,27 +43,30 @@ canvas {
     backdrop-filter: blur(12px);
     box-shadow: 0 0 40px rgba(0,0,0,0.5);
     position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
 }
-
+.box::-webkit-scrollbar { width: 6px; }
+.box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
 .back-btn {
     position: absolute;
-    top: 20px;
-    left: 20px;
+    top: 20px; left: 20px;
     padding: 8px 16px;
     border-radius: 6px;
     background: #1e293b;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 13px;
 }
-.back-btn:hover {
-    background: #3b82f6;
-}
-
+.back-btn:hover { background: #3b82f6; }
 .profile-text {
     margin-top: 20px;
-    font-size: 16px;
-    line-height: 1.8;
+    font-size: 15px;
+    line-height: 1.9;
     color: #cbd5e1;
+    text-align: left;
 }
-
 button {
     margin-top: 25px;
     padding: 12px 30px;
@@ -72,85 +75,109 @@ button {
     background: linear-gradient(135deg, #3b82f6, #9333ea);
     color: white;
     cursor: pointer;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    transition: opacity 0.2s;
 }
-
-.button-grid {
-    margin-top: 35px;
-}
+button:hover { opacity: 0.85; }
+.button-grid { margin-top: 35px; }
 .button-grid button {
-    margin: 10px;
+    margin: 8px;
     background: #1e293b;
 }
-
+.button-grid button:hover { background: #3b82f6; }
+.section-divider {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    margin: 22px 0;
+}
 .edu-row {
     display: flex;
     justify-content: space-between;
     text-align: left;
-    margin-top: 20px;
+    margin-top: 24px;
+    gap: 20px;
 }
-
-.edu-title {
-    font-weight: 600;
-}
-
-.edu-sub {
-    color: #cbd5e1;
-    font-size: 14px;
-}
-
-/* NEW: learning text */
-.edu-learn {
-    margin-top: 5px;
-    font-size: 13px;
+.edu-row .date-col {
+    white-space: nowrap;
     color: #94a3b8;
+    font-size: 13px;
+    padding-top: 3px;
+    min-width: 120px;
+    text-align: right;
 }
-
+.edu-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+.edu-sub { color: #94a3b8; font-size: 13px; margin-bottom: 6px; }
+.edu-learn {
+    margin-top: 6px;
+    font-size: 13.5px;
+    color: #94a3b8;
+    line-height: 1.8;
+}
+.tag {
+    display: inline-block;
+    background: rgba(59,130,246,0.15);
+    border: 1px solid rgba(59,130,246,0.3);
+    color: #93c5fd;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin: 3px 2px;
+}
 .skill-row {
     display: flex;
     justify-content: space-between;
     text-align: left;
     padding: 12px 0;
     border-bottom: 1px solid rgba(255,255,255,0.08);
+    gap: 20px;
 }
-
-.skill-title {
-    font-weight: 600;
-    width: 30%;
-}
-
-.skill-items {
-    width: 65%;
-}
-
-.tooltip {
-    position: relative;
-    cursor: pointer;
-}
+.skill-title { font-weight: 600; width: 170px; min-width: 170px; font-size: 14px; color: #e2e8f0; }
+.skill-items { flex: 1; color: #cbd5e1; font-size: 13.5px; line-height: 1.8; }
+.tooltip { position: relative; cursor: pointer; border-bottom: 1px dashed rgba(148,163,184,0.4); }
 .tooltip:hover::after {
     content: attr(data-tip);
     position: absolute;
-    bottom: 140%;
+    bottom: 130%;
     left: 50%;
     transform: translateX(-50%);
-    background: #111827;
-    padding: 6px 10px;
+    background: #0f172a;
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 5px 10px;
     border-radius: 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 99;
+    color: #e2e8f0;
+}
+a { color: #38bdf8; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.project-link {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 5px 14px;
+    border-radius: 6px;
+    background: rgba(56,189,248,0.12);
+    border: 1px solid rgba(56,189,248,0.3);
+    color: #38bdf8;
     font-size: 12px;
 }
-
-a {
-    color: #38bdf8;
-    text-decoration: none;
+.project-link:hover { background: rgba(56,189,248,0.25); text-decoration: none; }
+.badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #3b82f6, #9333ea);
+    color: white;
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    margin-left: 8px;
+    vertical-align: middle;
 }
-a:hover {
-    text-decoration: underline;
-}
-
 .hidden { display: none; }
-
+.name-sub { color: #94a3b8; font-size: 15px; margin: 6px 0 0; }
+.contact-line { color: #cbd5e1; font-size: 13.5px; margin: 10px 0 0; }
 </style>
 </head>
-
 <body>
 
 <canvas id="bg"></canvas>
@@ -158,112 +185,89 @@ a:hover {
 <!-- LANDING -->
 <div id="landing" class="center">
 <div class="box">
-<h1>KAVYA SHAH</h1>
-<p>he / him • Economics & Analytics</p>
-<p>
-Mumbai | shahkavya9116@gmail.com | +91 8160438137 |
-<a href="https://www.linkedin.com/in/kavya-shah-151178267/" target="_blank">LinkedIn</a>
+<h1 style="font-size:2.8rem; margin-bottom:6px; background:linear-gradient(135deg,#38bdf8,#818cf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">KAVYA SHAH</h1>
+<p class="name-sub">B.Com Economics &amp; Analytics &nbsp;|&nbsp; AI App Builder &nbsp;|&nbsp; Data Analyst</p>
+<p class="contact-line">
+  Surat, India &nbsp;|&nbsp; shahkavya9116@gmail.com &nbsp;|&nbsp; +91 8160438137
+  &nbsp;|&nbsp; <a href="https://www.linkedin.com/in/kavyashah911/" target="_blank">LinkedIn</a>
+  &nbsp;|&nbsp; <a href="https://skavya911.github.io/kavya-cv/" target="_blank">Portfolio</a>
 </p>
-<button onclick="openCV()">View CV</button>
+<button onclick="openCV()" style="margin-top:30px; font-size:15px; padding:14px 40px;">View CV →</button>
 </div>
 </div>
 
 <!-- PROFILE -->
 <div id="profile" class="center hidden">
 <div class="box">
-
 <h2>Profile</h2>
-
 <p class="profile-text">
-<p class="profile-text">
-Analytical and detail-oriented Economics & Analytics student at SVKM’s NM College with a strong foundation in economic theory and data-driven decision-making. Skilled in Python (Pandas, NumPy, Seaborn), SQL, Power BI, and Excel for data wrangling, visualization, and extracting actionable insights. Experienced through internships and projects in applying analytical and economic concepts to real-world business problems. Adept at translating complex data into meaningful insights, with a keen interest in solving business and market challenges using data.
+Economics &amp; Analytics student at SVKM's NM College with hands-on experience building production-grade AI-powered business applications, performing end-to-end data analysis, and deriving actionable insights from large datasets. Proven ability to translate real business problems into working software products — independently designed and deployed a complete B2B Sales, Catalogue, Inventory, and Order Management platform actively used by a live business across 12 Gujarat routes and 2,000+ dealer accounts. Skilled in Python, SQL, Power BI, React, and Supabase. Eager to contribute in data, product, or technology roles at a growth-oriented organisation.
 </p>
-</p>
-
 <div class="button-grid">
-<button onclick="showPage('education')">EDUCATION</button>
-<button onclick="showPage('skills')">SKILLS</button>
-<button onclick="showPage('experience')">EXPERIENCE</button>
-<button onclick="showPage('projects')">PROJECTS</button>
-<button onclick="showPage('hobbies')">HOBBIES & INTERESTS</button>
+<button onclick="showPage('education')">Education</button>
+<button onclick="showPage('skills')">Skills</button>
+<button onclick="showPage('experience')">Experience</button>
+<button onclick="showPage('projects')">Projects</button>
+<button onclick="showPage('hobbies')">Hobbies &amp; Interests</button>
 </div>
-
 </div>
 </div>
 
 <!-- EDUCATION -->
 <div id="education" class="center hidden">
 <div class="box">
-
 <button class="back-btn" onclick="showPage('profile')">← Back</button>
-
 <h2>Education</h2>
 
 <div class="edu-row">
-<div>
+<div style="flex:1">
 <div class="edu-title">
-<a href="https://nmcollege.in/academics/bcom-economics-analytics" target="_blank">
-Economics & Analytics
-</a>
+<a href="https://nmcollege.in/academics/bcom-economics-analytics" target="_blank">Economics &amp; Analytics</a>
 </div>
-
-<div class="edu-sub">
-SVKM’s NM College, Mumbai 
-<a href="https://maps.google.com/?q=NM+College+Mumbai" target="_blank">📍</a>
-</div>
-
+<div class="edu-sub">SVKM's Narsee Monjee College of Commerce and Economics, Mumbai <a href="https://maps.google.com/?q=NM+College+Mumbai" target="_blank">📍</a></div>
 <div class="edu-learn">
-– Studying core subjects including Microeconomics, Macroeconomics, Statistics, and Data Analytics.<br>
-– Gaining hands-on experience in data analysis using Python (Pandas, NumPy) and visualization tools.<br>
-– Applying economic theories to real-world business and market scenarios through projects and case studies.<br>
-– Developing strong analytical, quantitative, and problem-solving skills for data-driven decision making.
+– Studying Microeconomics, Macroeconomics, Statistics, and Data Analytics.<br>
+– Hands-on data analysis using Python (Pandas, NumPy) and visualisation tools.<br>
+– Applying economic theory to real-world business scenarios through projects and case studies.<br>
+– Developing strong quantitative and problem-solving skills for data-driven decision making.
 </div>
+</div>
+<div class="date-col">2024 – 2027</div>
 </div>
 
-<div>2024 – 2027</div>
-</div>
+<hr class="section-divider">
 
 <div class="edu-row">
-<div>
+<div style="flex:1">
 <div class="edu-title">
-<a href="https://www.radiant.edu.in/" target="_blank">
-HSC – Commerce (Applied Mathematics)
-</a>
+<a href="https://www.radiant.edu.in/" target="_blank">HSC — Commerce (Applied Mathematics)</a>
 </div>
-
-<div class="edu-sub">
-Radiant English Academy, Surat 
-<a href="https://maps.google.com/?q=Radiant+Academy+Surat" target="_blank">📍</a>
-</div>
-
+<div class="edu-sub">Radiant English Academy, Surat <a href="https://maps.google.com/?q=Radiant+Academy+Surat" target="_blank">📍</a></div>
 <div class="edu-learn">
-– Built strong foundation in Mathematics, Accounts, Economics, and Business Studies.<br>
-– Developed logical reasoning, numerical analysis, and quantitative problem-solving abilities.<br>
-– Gained understanding of financial concepts, business operations, and economic fundamentals.<br>
-– Strengthened academic discipline and analytical thinking skills.
+– Strong foundation in Mathematics, Accounts, Economics, and Business Studies.<br>
+– Developed logical reasoning, numerical analysis, and quantitative problem-solving.<br>
+– Gained understanding of financial concepts, business operations, and economic fundamentals.
 </div>
 </div>
-
-<div>2022 – 2024</div>
+<div class="date-col">2022 – 2024</div>
 </div>
 
 </div>
 </div>
-<!-- SKILLS (UNCHANGED) -->
+
+<!-- SKILLS -->
 <div id="skills" class="center hidden">
 <div class="box">
-
 <button class="back-btn" onclick="showPage('profile')">← Back</button>
-
 <h2>Skills</h2>
 
 <div class="skill-row">
 <div class="skill-title">Programming</div>
 <div class="skill-items">
-<span class="tooltip" data-tip="Programming language for data analysis">Python</span> ·
-<span class="tooltip" data-tip="Data manipulation library">Pandas</span> ·
+<span class="tooltip" data-tip="Core language for data & apps">Python</span> ·
+<span class="tooltip" data-tip="Data manipulation">Pandas</span> ·
 <span class="tooltip" data-tip="Numerical computing">NumPy</span> ·
-<span class="tooltip" data-tip="Data visualization">Seaborn</span> ·
+<span class="tooltip" data-tip="Statistical visualisation">Seaborn</span> ·
 <span class="tooltip" data-tip="Graph plotting">Matplotlib</span>
 </div>
 </div>
@@ -272,15 +276,27 @@ Radiant English Academy, Surat
 <div class="skill-title">Databases</div>
 <div class="skill-items">
 <span class="tooltip" data-tip="Query language">SQL</span> ·
-<span class="tooltip" data-tip="Database system">PostgreSQL</span>
+<span class="tooltip" data-tip="Relational database">PostgreSQL</span> ·
+<span class="tooltip" data-tip="Backend-as-a-service, Auth, Realtime">Supabase</span>
+</div>
+</div>
+
+<div class="skill-row">
+<div class="skill-title">App Development</div>
+<div class="skill-items">
+<span class="tooltip" data-tip="Frontend UI library">React</span> ·
+<span class="tooltip" data-tip="AI-powered app builder">Lovable</span> ·
+<span class="tooltip" data-tip="Excel file generation in-browser">SheetJS</span> ·
+<span class="tooltip" data-tip="No-code / Low-code tools">No-Code / Low-Code</span>
 </div>
 </div>
 
 <div class="skill-row">
 <div class="skill-title">Visualisation</div>
 <div class="skill-items">
-<span class="tooltip" data-tip="Dashboard tool">Power BI</span> ·
-<span class="tooltip" data-tip="Spreadsheet analysis">Excel</span>
+<span class="tooltip" data-tip="Interactive dashboards">Power BI</span> ·
+<span class="tooltip" data-tip="Spreadsheet analysis">Microsoft Excel</span> ·
+<span class="tooltip" data-tip="Interactive charts">Plotly / Recharts</span>
 </div>
 </div>
 
@@ -288,28 +304,23 @@ Radiant English Academy, Surat
 <div class="skill-title">Analytical</div>
 <div class="skill-items">
 <span class="tooltip" data-tip="Exploratory Data Analysis">EDA</span> ·
-<span class="tooltip" data-tip="Cleaning data">Data Wrangling</span> ·
+<span class="tooltip" data-tip="Cleaning raw data">Data Wrangling</span> ·
 <span class="tooltip" data-tip="Statistical insights">Statistical Thinking</span> ·
-<span class="tooltip" data-tip="Business decision making">Business Analysis</span>
+<span class="tooltip" data-tip="Business decision making">Business Analysis</span> ·
+<span class="tooltip" data-tip="Sales data analysis">Sales Analysis</span>
 </div>
 </div>
 
 <div class="skill-row">
 <div class="skill-title">Soft Skills</div>
 <div class="skill-items">
-<span class="tooltip" data-tip="Accuracy in work">Attention to Detail</span> ·
-<span class="tooltip" data-tip="Handling change">Adaptability</span> ·
-<span class="tooltip" data-tip="Effective communication">Communication</span> ·
-<span class="tooltip" data-tip="Managing time">Time Management</span> ·
-<span class="tooltip" data-tip="Handling pressure">Resilience</span>
+Attention to Detail · Adaptability · Communication · Time Management · Resilience
 </div>
 </div>
 
 <div class="skill-row">
 <div class="skill-title">Languages</div>
-<div class="skill-items">
-English · Gujarati · Hindi
-</div>
+<div class="skill-items">English · Gujarati · Hindi</div>
 </div>
 
 </div>
@@ -318,57 +329,49 @@ English · Gujarati · Hindi
 <!-- EXPERIENCE -->
 <div id="experience" class="center hidden">
 <div class="box">
-
 <button class="back-btn" onclick="showPage('profile')">← Back</button>
-
 <h2>Experience</h2>
-
-<!-- GOZOOP -->
-<div class="edu-row">
-<div>
-<div class="edu-title">
-<a href="https://www.gozoop.com/" target="_blank">
-BRM Trainee – Gozoop Group
-</a>
-</div>
-
-<div class="edu-sub">
-Internship, Mumbai (Hybrid)
-</div>
-
-<div class="edu-learn">
-– Monitored and analyzed customer sentiment across multiple digital platforms to evaluate brand perception and engagement trends.<br>
-– Assisted in execution and coordination of brand campaigns, ensuring smooth communication between internal teams and stakeholders.<br>
-– Supported client servicing activities by preparing reports, tracking campaign performance, and maintaining workflow efficiency.<br>
-– Gained hands-on exposure to digital marketing strategies, brand management, and real-time business decision processes.
-</div>
-</div>
-
-<div>Dec 2024 – Jan 2025</div>
-</div>
 
 <!-- MAHAVIR -->
 <div class="edu-row">
-<div>
+<div style="flex:1">
 <div class="edu-title">
-<a href="https://seemaplastics.com/" target="_blank">
-Summer Intern – Mahavir Plastic Agency
-</a>
+Summer Intern — Business &amp; Technology <span class="badge">🚀 App Built</span>
 </div>
-
-<div class="edu-sub">
-Surat
-</div>
-
+<div class="edu-sub"><a href="https://seemaplastics.com/" target="_blank">Mahavir Plastic Agency</a>, Surat</div>
 <div class="edu-learn">
-– Managed and analyzed inventory data to improve stock tracking accuracy and operational efficiency.<br>
-– Assisted in retail and B2B sales operations, ensuring smooth transaction handling and customer interaction.<br>
-– Coordinated between inventory and sales functions to optimize product availability and reduce delays.<br>
-– Developed practical understanding of supply chain processes, sales strategy, and day-to-day business operations.
+– Independently designed, built, and deployed a full-stack B2B Sales and Order Management application used live by the business's sales team across 12 Gujarat routes and 2,000+ dealer accounts.<br>
+– Engineered a 1,700+ SKU product catalogue across 2 brands with a custom price-code obfuscation system and role-based access control using React and Supabase.<br>
+– Built WhatsApp-style structured order placement with product search, spare-parts photo capture, partial delivery tracking (item-level), and one-click Excel/PDF exports.<br>
+– Implemented a full admin analytics dashboard with route performance heatmaps, salesman leaderboards, and real-time order conversion KPIs.<br>
+– Assisted in inventory analysis, B2B sales coordination, and daily business operations.
 </div>
+<div style="margin-top:10px;">
+<span class="tag">React</span><span class="tag">Supabase</span><span class="tag">PostgreSQL</span>
+<span class="tag">Lovable</span><span class="tag">SheetJS</span><span class="tag">Recharts</span>
+<span class="tag">B2B</span><span class="tag">Real-time DB</span>
+</div>
+</div>
+<div class="date-col">Apr 2025 – Jul 2025</div>
 </div>
 
-<div>Apr 2025 – Jul 2025</div>
+<hr class="section-divider">
+
+<!-- GOZOOP -->
+<div class="edu-row">
+<div style="flex:1">
+<div class="edu-title">
+<a href="https://www.gozoop.com/" target="_blank">BRM Trainee — Gozoop Group</a>
+</div>
+<div class="edu-sub">Internship, Mumbai (Hybrid)</div>
+<div class="edu-learn">
+– Monitored and analysed customer sentiment across digital platforms to evaluate brand perception and engagement trends.<br>
+– Assisted in execution and coordination of brand campaigns, ensuring smooth stakeholder communication.<br>
+– Supported client servicing by preparing reports, tracking campaign performance, and maintaining workflow efficiency.<br>
+– Gained exposure to digital marketing strategies, brand management, and real-time business decision processes.
+</div>
+</div>
+<div class="date-col">Dec 2024 – Jan 2025</div>
 </div>
 
 </div>
@@ -377,113 +380,124 @@ Surat
 <!-- PROJECTS -->
 <div id="projects" class="center hidden">
 <div class="box">
-
 <button class="back-btn" onclick="showPage('profile')">← Back</button>
-
 <h2>Projects</h2>
 
-<!-- PROJECT 1 -->
+<!-- PROJECT 1 — FLAGSHIP -->
 <div class="edu-row">
-<div>
+<div style="flex:1">
 <div class="edu-title">
-Cyber Crime Analysis in India (2017–2022)
+B2B Sales, Catalogue &amp; Order Management Platform — Mahavir Plastic Agency <span class="badge">Live</span>
 </div>
-
 <div class="edu-learn">
-– Performed end-to-end data wrangling and EDA on a district-wise cybercrime dataset with 5,322 rows and 45 crime categories using Python, Pandas, and Matplotlib.<br>
-– Identified yearly trends showing a consistent rise in total offences from 7,976 (2017) to 33,786 (2022), with cheating impersonation and identity theft as the top crime categories.<br>
-– Conducted state-wise analysis revealing Telangana and Maharashtra as the highest-crime states; tracked financial fraud trends (OTP, ATM, online banking, card fraud) across six years.<br>
-– Designed a What-If scenario analysis on demonetization’s impact on counterfeit currency using line plots.<br><br>
+– Sole designer and builder of a production-ready mobile-first web application serving a real wholesale business operating across 12 Gujarat routes and 2,000+ dealer accounts.<br>
+– Built a 1,700+ SKU product catalogue across Seema Moulded Furniture and Seema Gold Home Appliances with a proprietary price-code system so salesmen never see real trade prices.<br>
+– Developed structured order-taking UI with in-memory instant product search, colour selection, spare-parts photo capture (camera + gallery), and no-order visit logging with reason codes.<br>
+– Implemented full admin panel: route-wise analytics, salesman leaderboards, partial delivery tracking (item-level checkboxes), real-time notifications, bulk Excel export, A4 print, and WhatsApp sharing.<br>
+– Deployed on Supabase (PostgreSQL + Auth + Storage + Realtime) with row-level security, role-based routing, and automatic 21-day order archiving.
+</div>
+<div style="margin-top:10px;">
+<span class="tag">React</span><span class="tag">Supabase</span><span class="tag">PostgreSQL</span>
+<span class="tag">Lovable AI</span><span class="tag">SheetJS</span><span class="tag">Recharts</span>
+<span class="tag">Real-time</span><span class="tag">Role-based Auth</span>
+</div>
+</div>
+</div>
 
-<a href="https://colab.research.google.com/drive/1PFQq9sIH413Xp2iMwLSeTnRBF-WwsUwB" target="_blank">
-View Project →
-</a>
-</div>
-</div>
-</div>
+<hr class="section-divider">
 
 <!-- PROJECT 2 -->
 <div class="edu-row">
-<div>
-<div class="edu-title">
-WHO Global Air Quality Data Analysis
-</div>
-
+<div style="flex:1">
+<div class="edu-title">Cyber Crime Analysis in India (2017–2022)</div>
 <div class="edu-learn">
-– Cleaned and profiled a WHO dataset with 32,000+ rows, handling missing values through forward-fill imputation.<br>
-– Engineered pollution categories (Clean → Highly Polluted) using quartile-based binning.<br>
-– Identified top 10 polluted cities and found strong correlation (r≈0.87) between PM2.5 and PM10.<br>
-– Analyzed seasonal forest fire impacts using time-series plots.<br><br>
+– End-to-end EDA on a district-wise cybercrime dataset with 5,322 rows and 45 crime categories using Python, Pandas, and Matplotlib.<br>
+– Identified yearly trend: total offences rose from 7,976 (2017) to 33,786 (2022); cheating impersonation as top category.<br>
+– State-wise analysis revealed Telangana and Maharashtra as highest-crime states; tracked OTP, ATM, and card fraud across six years.<br>
+– Designed a What-If scenario analysis on demonetisation's impact on counterfeit currency using line plots.
+</div>
+<div style="margin-top:8px;"><span class="tag">Python</span><span class="tag">Pandas</span><span class="tag">Matplotlib</span><span class="tag">EDA</span></div>
+<a class="project-link" href="https://colab.research.google.com/drive/1PFQq9sIH413Xp2iMwLSeTnRBF-WwsUwB" target="_blank">View Project →</a>
+</div>
+</div>
 
-<a href="https://colab.research.google.com/drive/1BIMRKQDilxPZ3XPUgp_n8vHRVhVyd1Py" target="_blank">
-View Project →
-</a>
-</div>
-</div>
-</div>
+<hr class="section-divider">
 
 <!-- PROJECT 3 -->
 <div class="edu-row">
-<div>
-<div class="edu-title">
-Economics Research – Video Production & Analysis
+<div style="flex:1">
+<div class="edu-title">WHO Global Air Quality Data Analysis</div>
+<div class="edu-learn">
+– Cleaned and profiled a large-scale WHO dataset with 32,000+ rows, handling missing values through forward-fill imputation for PM2.5 and PM10.<br>
+– Engineered pollution category features (Clean → Highly Polluted) using quartile-based binning across PM2.5, PM10, and NO2.<br>
+– Identified top 10 most polluted cities globally; revealed strong correlation (r ≈ 0.87) between PM2.5 and PM10 via Seaborn heatmap.<br>
+– Analysed seasonal forest fire impacts on air quality across 7 global locations through time-series plots.
+</div>
+<div style="margin-top:8px;"><span class="tag">Python</span><span class="tag">Seaborn</span><span class="tag">NumPy</span><span class="tag">EDA</span></div>
+<a class="project-link" href="https://colab.research.google.com/drive/1BIMRKQDilxPZ3XPUgp_n8vHRVhVyd1Py" target="_blank">View Project →</a>
+</div>
 </div>
 
+<hr class="section-divider">
+
+<!-- PROJECT 4 -->
+<div class="edu-row">
+<div style="flex:1">
+<div class="edu-title">Interactive AI-Powered Portfolio Website</div>
+<div class="edu-learn">
+– Designed and developed a fully responsive personal portfolio website using prompt engineering and front-end skills.<br>
+– Implemented clean UI/UX principles with dynamic sections for projects, skills, and experience.
+</div>
+<div style="margin-top:8px;"><span class="tag">HTML/CSS</span><span class="tag">JavaScript</span><span class="tag">AI Prompting</span></div>
+<a class="project-link" href="https://skavya911.github.io/kavya-cv/" target="_blank">View Project →</a>
+</div>
+</div>
+
+<hr class="section-divider">
+
+<!-- PROJECT 5 -->
+<div class="edu-row">
+<div style="flex:1">
+<div class="edu-title">Economics Research — Video Production &amp; Analysis</div>
 <div class="edu-learn">
 – Collaborated on an economics research project involving data analysis and structured presentation.<br>
 – Led full video production: scripting, recording, and post-production.<br>
-– Translated complex economic concepts into engaging visual storytelling.<br><br>
-
-<a href="https://drive.google.com/file/d/1SjSTwyiQJ12FSz5enSVoUT-V4o3So1x1/view" target="_blank">
-View Project →
-</a>
+– Translated complex economic concepts into engaging visual storytelling.
 </div>
+<a class="project-link" href="https://drive.google.com/file/d/1SjSTwyiQJ12FSz5enSVoUT-V4o3So1x1/view" target="_blank">View Project →</a>
 </div>
 </div>
 
 </div>
 </div>
+
 <!-- HOBBIES -->
 <div id="hobbies" class="center hidden">
 <div class="box">
-
 <button class="back-btn" onclick="showPage('profile')">← Back</button>
+<h2>Hobbies &amp; Interests</h2>
 
-<h2>Hobbies & Interests</h2>
-
-<!-- VIDEO EDITING -->
 <div class="edu-row">
-<div>
-
-<div class="edu-title">
-Video Editing & Visual Storytelling
-</div>
-
+<div style="flex:1">
+<div class="edu-title">🎬 Video Editing &amp; Visual Storytelling</div>
 <div class="edu-learn">
 – Passionate about cinematic video editing with hands-on experience in scripting, editing, and post-production workflows.<br>
 – Created multiple edited videos showcasing storytelling, transitions, and visual composition techniques.<br>
-– Skilled in transforming raw footage into engaging content with strong attention to detail and narrative flow.<br>
 – Demonstrates creativity, visual thinking, and content presentation skills relevant to modern digital platforms.
 </div>
-
 </div>
 </div>
 
-<!-- HIP HOP -->
+<hr class="section-divider">
+
 <div class="edu-row">
-<div>
-
-<div class="edu-title">
-Hip-Hop Culture & Music Engagement
-</div>
-
+<div style="flex:1">
+<div class="edu-title">🎤 Hip-Hop Culture &amp; Music</div>
 <div class="edu-learn">
 – Strong interest in hip-hop culture, actively attending live concerts and music events.<br>
-– Personally interacted with artists, engaging in conversations about their creative process, upcoming songs, and album releases.<br>
-– Documented experiences through photos and videos, capturing live performances and artist interactions.<br>
-– Demonstrates confidence, communication skills, and genuine engagement with creative communities.
+– Personally interacted with artists, engaging in conversations about their creative process and upcoming releases.<br>
+– Documented experiences through photos and videos — demonstrates confidence and communication skills.
 </div>
-
 </div>
 </div>
 
@@ -492,70 +506,78 @@ Hip-Hop Culture & Music Engagement
 
 <script>
 function openCV() {
-document.getElementById("landing").classList.add("hidden");
-document.getElementById("profile").classList.remove("hidden");
+    document.getElementById("landing").classList.add("hidden");
+    document.getElementById("profile").classList.remove("hidden");
 }
-
 function showPage(page) {
-document.getElementById("profile").classList.add("hidden");
-document.getElementById("education").classList.add("hidden");
-document.getElementById("skills").classList.add("hidden");
-document.getElementById("experience").classList.add("hidden");
-document.getElementById("projects").classList.add("hidden");
-document.getElementById("hobbies").classList.add("hidden");
-
-document.getElementById(page).classList.remove("hidden");
+    ["profile","education","skills","experience","projects","hobbies"].forEach(id => {
+        document.getElementById(id).classList.add("hidden");
+    });
+    document.getElementById(page).classList.remove("hidden");
 }
 
-/* BACKGROUND (UNCHANGED) */
+/* ANIMATED BACKGROUND */
 const canvas = document.getElementById("bg");
 const ctx = canvas.getContext("2d");
-
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+window.addEventListener("resize", () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
 
 let texts = [
-"print()", "pd.DataFrame()", "pd.sort_values()", ".groupby()",
-"SELECT", "WHERE", "JOIN", "UPPER()", "LOWER()", "LENGTH()",
-"SUBSTRING()", "LEFT()", "RIGHT()", "TRIM()", "CONCAT()",
-"CONCAT_WS()", "REPLACE()", "REVERSE()", "POSITION()", "ASCII()", "CHR()",
-"Z-score", "stats.zscore()", "IQR", "Q1", "Q3",
-"StandardScaler()", "MinMaxScaler()", "RobustScaler()",
-"cut()", "qcut()", "clip()", "axis=1",
-"EDA", "Scaling", "Discretization",
-"Mean", "Median", "Outliers", "Normalization",
-"Feature Engineering", "Regression", "Clustering"
+    "print()", "pd.DataFrame()", "pd.sort_values()", ".groupby()", ".merge()",
+    "SELECT", "WHERE", "JOIN", "GROUP BY", "HAVING",
+    "supabase.from()", ".upsert()", ".select()", ".eq()", "useState()",
+    "React", "Supabase", "PostgreSQL", "SheetJS", "Recharts",
+    "Z-score", "IQR", "Q1", "Q3", "StandardScaler()",
+    "MinMaxScaler()", "cut()", "qcut()", "axis=1",
+    "EDA", "Scaling", "Normalization", "Feature Engineering",
+    "Mean", "Median", "Outliers", "Correlation", "r=0.87",
+    "Power BI", "Excel", "seaborn.heatmap()", "plt.plot()",
+    "No-Code", "Low-Code", "AI Builder", "Role-Based Auth",
+    "B2B", "SaaS", "REST API", "Real-time"
 ];
 
 let particles = [];
-
-for (let i = 0; i < 120; i++) {
-particles.push({
-x: Math.random() * canvas.width,
-y: Math.random() * canvas.height,
-text: texts[Math.floor(Math.random() * texts.length)],
-speedY: Math.random() * 0.8 + 0.3
-});
+for (let i = 0; i < 130; i++) {
+    particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        text: texts[Math.floor(Math.random() * texts.length)],
+        speedY: Math.random() * 0.7 + 0.25,
+        opacity: Math.random() * 0.12 + 0.05
+    });
 }
 
 function animate() {
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-ctx.fillStyle = "rgba(255,255,255,0.12)";
-ctx.font = "12px monospace";
-
-particles.forEach(p => {
-ctx.fillText(p.text, p.x, p.y);
-p.y += p.speedY;
-
-if (p.y > canvas.height) p.y = 0;
-});
-
-requestAnimationFrame(animate);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.font = "12px monospace";
+    particles.forEach(p => {
+        ctx.fillStyle = `rgba(255,255,255,${p.opacity})`;
+        ctx.fillText(p.text, p.x, p.y);
+        p.y += p.speedY;
+        if (p.y > canvas.height) { p.y = 0; p.x = Math.random() * canvas.width; }
+    });
+    requestAnimationFrame(animate);
 }
-
 animate();
 </script>
 
 </body>
 </html>
+"""
 
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        self.wfile.write(HTML.encode())
+    def log_message(self, format, *args):
+        pass
+
+with socketserver.TCPServer(("", PORT), Handler) as httpd:
+    print(f"CV running at http://localhost:{PORT}")
+    httpd.serve_forever()
