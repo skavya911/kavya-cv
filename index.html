@@ -1,583 +1,820 @@
-import http.server
-import socketserver
-
-PORT = 8000
-
-HTML = """<!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kavya Shah | Interactive CV</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-* { box-sizing: border-box; }
-body {
-    margin: 0;
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #020617;
+    --surface: rgba(255,255,255,0.04);
+    --surface2: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.08);
+    --blue: #3b82f6;
+    --purple: #9333ea;
+    --cyan: #06b6d4;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --dim: #64748b;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
     font-family: 'Inter', sans-serif;
-    background: #020617;
-    color: white;
-    overflow: hidden;
-}
-h1, h2 { font-family: 'Poppins', sans-serif; }
-canvas {
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── CANVAS BG ── */
+  #bg {
     position: fixed;
-    top: 0; left: 0;
-    z-index: -1;
-}
-.center {
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow-y: auto;
-    padding: 20px;
-}
-.box {
-    max-width: 920px;
-    width: 100%;
-    padding: 50px;
-    border-radius: 20px;
-    text-align: center;
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── CURSOR GLOW ── */
+  .cursor-glow {
+    position: fixed;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    transform: translate(-50%,-50%);
+    z-index: 1;
+    transition: left 0.1s, top 0.1s;
+  }
+
+  /* ── LAYOUT ── */
+  .page {
     position: relative;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-.box::-webkit-scrollbar { width: 6px; }
-.box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
-.back-btn {
-    position: absolute;
-    top: 20px; left: 20px;
-    padding: 8px 16px;
-    border-radius: 6px;
-    background: #1e293b;
-    border: none;
-    color: white;
-    cursor: pointer;
-    font-size: 13px;
-}
-.back-btn:hover { background: #3b82f6; }
-.profile-text {
-    margin-top: 20px;
-    font-size: 15px;
-    line-height: 1.9;
-    color: #cbd5e1;
-    text-align: left;
-}
-button {
-    margin-top: 25px;
-    padding: 12px 30px;
-    border-radius: 8px;
-    border: none;
-    background: linear-gradient(135deg, #3b82f6, #9333ea);
-    color: white;
-    cursor: pointer;
-    font-size: 14px;
-    font-family: 'Inter', sans-serif;
-    transition: opacity 0.2s;
-}
-button:hover { opacity: 0.85; }
-.button-grid { margin-top: 35px; }
-.button-grid button {
-    margin: 8px;
-    background: #1e293b;
-}
-.button-grid button:hover { background: #3b82f6; }
-.section-divider {
-    border: none;
-    border-top: 1px solid rgba(255,255,255,0.08);
-    margin: 22px 0;
-}
-.edu-row {
+    z-index: 2;
+    min-height: 100vh;
     display: flex;
-    justify-content: space-between;
-    text-align: left;
-    margin-top: 24px;
-    gap: 20px;
-}
-.edu-row .date-col {
-    white-space: nowrap;
-    color: #94a3b8;
-    font-size: 13px;
-    padding-top: 3px;
-    min-width: 120px;
-    text-align: right;
-}
-.edu-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
-.edu-sub { color: #94a3b8; font-size: 13px; margin-bottom: 6px; }
-.edu-learn {
-    margin-top: 6px;
-    font-size: 13.5px;
-    color: #94a3b8;
-    line-height: 1.8;
-}
-.tag {
-    display: inline-block;
-    background: rgba(59,130,246,0.15);
-    border: 1px solid rgba(59,130,246,0.3);
-    color: #93c5fd;
-    font-size: 11px;
-    padding: 2px 8px;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 780px;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 20px;
-    margin: 3px 2px;
-}
-.skill-row {
-    display: flex;
-    justify-content: space-between;
-    text-align: left;
-    padding: 12px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    gap: 20px;
-}
-.skill-title { font-weight: 600; width: 170px; min-width: 170px; font-size: 14px; color: #e2e8f0; }
-.skill-items { flex: 1; color: #cbd5e1; font-size: 13.5px; line-height: 1.8; }
-.tooltip { position: relative; cursor: pointer; border-bottom: 1px dashed rgba(148,163,184,0.4); }
-.tooltip:hover::after {
-    content: attr(data-tip);
+    padding: 32px 40px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 0 80px rgba(59,130,246,0.05), 0 0 0 1px rgba(255,255,255,0.04);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
     position: absolute;
-    bottom: 130%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #0f172a;
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 5px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    white-space: nowrap;
-    z-index: 99;
-    color: #e2e8f0;
-}
-a { color: #38bdf8; text-decoration: none; }
-a:hover { text-decoration: underline; }
-.project-link {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 5px 14px;
-    border-radius: 6px;
-    background: rgba(56,189,248,0.12);
-    border: 1px solid rgba(56,189,248,0.3);
-    color: #38bdf8;
+    top: -1px; left: 20%; right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent);
+  }
+
+  /* ── LANDING ── */
+  #landing .card { text-align: center; }
+
+  .avatar-ring {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 24px; font-weight: 700;
+    box-shadow: 0 0 30px rgba(99,102,241,0.4);
+    animation: pulse-ring 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-ring {
+    0%,100% { box-shadow: 0 0 40px rgba(99,102,241,0.4); }
+    50%      { box-shadow: 0 0 70px rgba(99,102,241,0.7); }
+  }
+
+  .main-name {
+    font-family: 'Poppins', sans-serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #e2e8f0 0%, #a5b4fc 40%, #67e8f9 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.15;
+    margin-bottom: 8px;
+  }
+
+  .tagline {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+  }
+
+  .tagline span {
+    color: var(--cyan);
+    font-weight: 500;
+  }
+
+  .contact-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .contact-chip {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
     font-size: 12px;
-}
-.project-link:hover { background: rgba(56,189,248,0.25); text-decoration: none; }
-.badge {
-    display: inline-block;
-    background: linear-gradient(135deg, #3b82f6, #9333ea);
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .contact-chip:hover {
+    border-color: rgba(99,102,241,0.5);
     color: white;
-    font-size: 11px;
-    padding: 2px 10px;
-    border-radius: 20px;
-    margin-left: 8px;
-    vertical-align: middle;
-}
-.hidden { display: none; }
-.name-sub { color: #94a3b8; font-size: 15px; margin: 6px 0 0; }
-.contact-line { color: #cbd5e1; font-size: 13.5px; margin: 10px 0 0; }
+    background: rgba(99,102,241,0.1);
+  }
+
+  .view-cv-btn {
+    margin-top: 4px;
+    padding: 11px 36px;
+    border-radius: 100px;
+    border: none;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s;
+    box-shadow: 0 4px 24px rgba(99,102,241,0.35);
+    letter-spacing: 0.3px;
+  }
+  .view-cv-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(99,102,241,0.5);
+  }
+
+  .nav-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+    animation: fade-up 0.35s ease both;
+  }
+
+  .nav-btn {
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.22s;
+    display: flex; align-items: center; gap: 8px;
+    text-align: left;
+  }
+  .nav-btn:hover {
+    background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(147,51,234,0.15));
+    border-color: rgba(99,102,241,0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    color: white;
+  }
+  .nav-btn .icon {
+    font-size: 16px;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface);
+    border-radius: 7px;
+    flex-shrink: 0;
+  }
+
+  /* ── INNER PAGES ── */
+  .hidden { display: none !important; }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 36px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .back-btn {
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .back-btn:hover { color: white; border-color: rgba(99,102,241,0.5); background: rgba(99,102,241,0.1); }
+
+  .page-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, white, var(--muted));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .page-title .icon { font-size: 1.4rem; margin-right: 6px; }
+
+  /* scrollable inner card */
+  .card.scrollable {
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 40px 48px;
+  }
+  .card.scrollable::-webkit-scrollbar { width: 4px; }
+  .card.scrollable::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  /* ── ENTRY ROWS ── */
+  .entry {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .entry:last-child { border-bottom: none; }
+
+  .entry-title {
+    font-weight: 600;
+    font-size: 15px;
+    color: white;
+    margin-bottom: 3px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+
+  .entry-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .entry-sub a { color: var(--cyan); text-decoration: none; }
+  .entry-sub a:hover { text-decoration: underline; }
+
+  .entry-date {
+    font-size: 12px;
+    color: var(--dim);
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+    padding-top: 3px;
+    text-align: right;
+  }
+
+  .bullets {
+    list-style: none;
+    padding: 0;
+  }
+  .bullets li {
+    font-size: 13.5px;
+    color: var(--muted);
+    line-height: 1.8;
+    padding: 2px 0 2px 18px;
+    position: relative;
+  }
+  .bullets li::before {
+    content: '▸';
+    position: absolute; left: 0;
+    color: var(--blue);
+    font-size: 12px;
+  }
+
+  /* ── TAGS ── */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .tag {
+    font-size: 11.5px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    border: 1px solid rgba(99,102,241,0.3);
+    background: rgba(99,102,241,0.08);
+    color: #a5b4fc;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── BADGE ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; padding: 2px 9px;
+    border-radius: 100px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .badge-live { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
+  .badge-app  { background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); color: #93c5fd; }
+
+  /* ── SKILLS ── */
+  .skill-table { width: 100%; border-collapse: collapse; }
+  .skill-table tr { border-bottom: 1px solid var(--border); }
+  .skill-table tr:last-child { border-bottom: none; }
+  .skill-table td { padding: 14px 0; vertical-align: top; }
+  .skill-label {
+    font-size: 13px; font-weight: 600;
+    color: var(--blue);
+    width: 180px;
+    font-family: 'JetBrains Mono', monospace;
+    padding-right: 20px;
+  }
+  .skill-val { font-size: 13.5px; color: var(--muted); line-height: 1.9; }
+  .skill-val .tip {
+    cursor: help;
+    border-bottom: 1px dashed rgba(148,163,184,0.3);
+    transition: color 0.2s;
+  }
+  .skill-val .tip:hover { color: white; }
+
+  /* ── PROJECT LINKS ── */
+  .proj-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 12px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(6,182,212,0.3);
+    background: rgba(6,182,212,0.06);
+    color: var(--cyan);
+    font-size: 12.5px;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .proj-link:hover { background: rgba(6,182,212,0.14); border-color: var(--cyan); }
+
+  /* ── PROFILE PAGE ── */
+  .profile-summary {
+    font-size: 14.5px;
+    color: var(--muted);
+    line-height: 1.95;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 26px;
+    position: relative;
+    overflow: hidden;
+  }
+  .profile-summary::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(180deg, var(--blue), var(--purple));
+    border-radius: 2px;
+  }
+
+  /* ── HOBBIES ── */
+  .hobby-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 24px;
+    margin-bottom: 14px;
+  }
+  .hobby-title { font-weight: 600; font-size: 15px; margin-bottom: 10px; }
+  .hobby-body { font-size: 13.5px; color: var(--muted); line-height: 1.8; }
+  .hobby-body li { list-style: none; padding: 2px 0 2px 16px; position: relative; }
+  .hobby-body li::before { content: '→'; position: absolute; left: 0; color: var(--purple); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .card { animation: fade-up 0.4s ease both; }
+
+  /* ── TYPING CURSOR ── */
+  .typed-cursor {
+    display: inline-block;
+    width: 2px; height: 1.1em;
+    background: var(--cyan);
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+    margin-left: 2px;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* links */
+  a { text-decoration: none; }
 </style>
 </head>
 <body>
 
 <canvas id="bg"></canvas>
+<div class="cursor-glow" id="glow"></div>
 
-<!-- LANDING -->
-<div id="landing" class="center">
-<div class="box">
-<h1 style="font-size:2.8rem; margin-bottom:6px; background:linear-gradient(135deg,#38bdf8,#818cf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">KAVYA SHAH</h1>
-<p class="name-sub">B.Com Economics &amp; Analytics &nbsp;|&nbsp; AI App Builder &nbsp;|&nbsp; Data Analyst</p>
-<p class="contact-line">
-  Surat, India &nbsp;|&nbsp; shahkavya9116@gmail.com &nbsp;|&nbsp; +91 8160438137
-  &nbsp;|&nbsp; <a href="https://www.linkedin.com/in/kavyashah911/" target="_blank">LinkedIn</a>
-  &nbsp;|&nbsp; <a href="https://skavya911.github.io/kavya-cv/" target="_blank">Portfolio</a>
-</p>
-<button onclick="openCV()" style="margin-top:30px; font-size:15px; padding:14px 40px;">View CV →</button>
-</div>
-</div>
+<!-- ═══════════════ LANDING ═══════════════ -->
+<div class="page" id="pg-landing">
+<div class="card" style="text-align:center;">
 
-<!-- PROFILE -->
-<div id="profile" class="center hidden">
-<div class="box">
-<h2>Profile</h2>
-<p class="profile-text">
-Economics &amp; Analytics student at SVKM's NM College with hands-on experience building production-grade AI-powered business applications, performing end-to-end data analysis, and deriving actionable insights from large datasets. Proven ability to translate real business problems into working software products — independently designed and deployed a complete B2B Sales, Catalogue, Inventory, and Order Management platform actively used by a live business across 12 Gujarat routes and 2,000+ dealer accounts. Skilled in Python, SQL, Power BI, React, and Supabase. Eager to contribute in data, product, or technology roles at a growth-oriented organisation.
-</p>
-<div class="button-grid">
-<button onclick="showPage('education')">Education</button>
-<button onclick="showPage('skills')">Skills</button>
-<button onclick="showPage('experience')">Experience</button>
-<button onclick="showPage('projects')">Projects</button>
-<button onclick="showPage('hobbies')">Hobbies &amp; Interests</button>
-</div>
-</div>
-</div>
+  <div class="avatar-ring">K</div>
 
-<!-- EDUCATION -->
-<div id="education" class="center hidden">
-<div class="box">
-<button class="back-btn" onclick="showPage('profile')">← Back</button>
-<h2>Education</h2>
+  <div class="main-name">KAVYA SHAH</div>
 
-<div class="edu-row">
-<div style="flex:1">
-<div class="edu-title">
-<a href="https://nmcollege.in/academics/bcom-economics-analytics" target="_blank">Economics &amp; Analytics</a>
-</div>
-<div class="edu-sub">SVKM's Narsee Monjee College of Commerce and Economics, Mumbai <a href="https://maps.google.com/?q=NM+College+Mumbai" target="_blank">📍</a></div>
-<div class="edu-learn">
-– Studying Microeconomics, Macroeconomics, Statistics, and Data Analytics.<br>
-– Hands-on data analysis using Python (Pandas, NumPy) and visualisation tools.<br>
-– Applying economic theory to real-world business scenarios through projects and case studies.<br>
-– Developing strong quantitative and problem-solving skills for data-driven decision making.
-</div>
-</div>
-<div class="date-col">2024 – 2027</div>
-</div>
+  <p class="tagline">
+    B.Com Economics &amp; Analytics &nbsp;·&nbsp;
+    <span>AI App Builder</span> &nbsp;·&nbsp;
+    Data Analyst
+  </p>
 
-<hr class="section-divider">
+  <div class="contact-bar">
+    <span class="contact-chip">📍 Surat, India</span>
+    <a class="contact-chip" href="mailto:shahkavya9116@gmail.com">✉️ shahkavya9116@gmail.com</a>
+    <span class="contact-chip">📞 +91 8160438137</span>
+    <a class="contact-chip" href="https://www.linkedin.com/in/kavyashah911/" target="_blank">🔗 LinkedIn</a>
+    <a class="contact-chip" href="https://skavya911.github.io/kavya-cv/" target="_blank">🌐 Portfolio</a>
+  </div>
 
-<div class="edu-row">
-<div style="flex:1">
-<div class="edu-title">
-<a href="https://www.radiant.edu.in/" target="_blank">HSC — Commerce (Applied Mathematics)</a>
-</div>
-<div class="edu-sub">Radiant English Academy, Surat <a href="https://maps.google.com/?q=Radiant+Academy+Surat" target="_blank">📍</a></div>
-<div class="edu-learn">
-– Strong foundation in Mathematics, Accounts, Economics, and Business Studies.<br>
-– Developed logical reasoning, numerical analysis, and quantitative problem-solving.<br>
-– Gained understanding of financial concepts, business operations, and economic fundamentals.
-</div>
-</div>
-<div class="date-col">2022 – 2024</div>
-</div>
+  <!-- View CV button — shown first -->
+  <div id="view-cv-wrap">
+    <button class="view-cv-btn" onclick="revealNav()">View CV →</button>
+  </div>
+
+  <!-- Nav grid — hidden until View CV clicked -->
+  <div class="nav-grid hidden" id="nav-grid">
+    <button class="nav-btn" onclick="go('profile')"><span class="icon">👤</span><span>Profile</span></button>
+    <button class="nav-btn" onclick="go('education')"><span class="icon">🎓</span><span>Education</span></button>
+    <button class="nav-btn" onclick="go('skills')"><span class="icon">⚡</span><span>Skills</span></button>
+    <button class="nav-btn" onclick="go('experience')"><span class="icon">💼</span><span>Experience</span></button>
+    <button class="nav-btn" onclick="go('projects')"><span class="icon">🚀</span><span>Projects</span></button>
+    <button class="nav-btn" onclick="go('hobbies')"><span class="icon">🎨</span><span>Hobbies</span></button>
+  </div>
 
 </div>
 </div>
 
-<!-- SKILLS -->
-<div id="skills" class="center hidden">
-<div class="box">
-<button class="back-btn" onclick="showPage('profile')">← Back</button>
-<h2>Skills</h2>
-
-<div class="skill-row">
-<div class="skill-title">Programming</div>
-<div class="skill-items">
-<span class="tooltip" data-tip="Core language for data & apps">Python</span> ·
-<span class="tooltip" data-tip="Data manipulation">Pandas</span> ·
-<span class="tooltip" data-tip="Numerical computing">NumPy</span> ·
-<span class="tooltip" data-tip="Statistical visualisation">Seaborn</span> ·
-<span class="tooltip" data-tip="Graph plotting">Matplotlib</span>
+<!-- ═══════════════ PROFILE ═══════════════ -->
+<div class="page hidden" id="pg-profile">
+<div class="card scrollable">
+  <div class="page-header">
+    <button class="back-btn" onclick="go('landing')">← Back</button>
+    <div class="page-title">👤 Profile</div>
+  </div>
+  <div class="profile-summary">
+    Economics &amp; Analytics student at SVKM's NM College with hands-on experience building production-grade AI-powered business applications, performing end-to-end data analysis, and deriving actionable insights from large datasets. Proven ability to translate real business problems into working software products — independently designed and deployed a complete B2B Sales, Catalogue, Inventory, and Order Management platform actively used by a live business across 12 Gujarat routes and 2,000+ dealer accounts. Skilled in Python, SQL, Power BI, React, and Supabase. Eager to contribute in data, product, or technology roles at a growth-oriented organisation.
+  </div>
+  <div style="margin-top:24px;">
+    <div style="font-size:11px; color:var(--dim); font-family:'JetBrains Mono',monospace; margin-bottom:12px; text-transform:uppercase; letter-spacing:1px;">Navigate</div>
+    <div class="nav-grid" style="grid-template-columns:repeat(3,1fr); margin-top:0;">
+      <button class="nav-btn" onclick="go('education')"><span class="icon">🎓</span><span>Education</span></button>
+      <button class="nav-btn" onclick="go('skills')"><span class="icon">⚡</span><span>Skills</span></button>
+      <button class="nav-btn" onclick="go('experience')"><span class="icon">💼</span><span>Experience</span></button>
+      <button class="nav-btn" onclick="go('projects')"><span class="icon">🚀</span><span>Projects</span></button>
+      <button class="nav-btn" onclick="go('hobbies')"><span class="icon">🎨</span><span>Hobbies</span></button>
+      <button class="nav-btn" onclick="go('landing')"><span class="icon">🏠</span><span>Home</span></button>
+    </div>
+  </div>
 </div>
 </div>
 
-<div class="skill-row">
-<div class="skill-title">Databases</div>
-<div class="skill-items">
-<span class="tooltip" data-tip="Query language">SQL</span> ·
-<span class="tooltip" data-tip="Relational database">PostgreSQL</span> ·
-<span class="tooltip" data-tip="Backend-as-a-service, Auth, Realtime">Supabase</span>
+<!-- ═══════════════ EDUCATION ═══════════════ -->
+<div class="page hidden" id="pg-education">
+<div class="card scrollable">
+  <div class="page-header">
+    <button class="back-btn" onclick="go('landing')">← Back</button>
+    <div class="page-title">🎓 Education</div>
+  </div>
+
+  <div class="entry">
+    <div>
+      <div class="entry-title">
+        <a href="https://nmcollege.in/academics/bcom-economics-analytics" target="_blank" style="color:white;">B.Com Economics &amp; Analytics</a>
+      </div>
+      <div class="entry-sub">SVKM's Narsee Monjee College of Commerce &amp; Economics, Mumbai &nbsp;<a href="https://maps.google.com/?q=NM+College+Mumbai" target="_blank">📍</a></div>
+      <ul class="bullets">
+        <li>Studying Microeconomics, Macroeconomics, Statistics, and Data Analytics.</li>
+        <li>Hands-on data analysis using Python (Pandas, NumPy) and visualisation tools.</li>
+        <li>Applying economic theory to real-world business scenarios through projects and case studies.</li>
+        <li>Developing strong quantitative and problem-solving skills for data-driven decision making.</li>
+      </ul>
+    </div>
+    <div class="entry-date">2024 – 2027</div>
+  </div>
+
+  <div class="entry">
+    <div>
+      <div class="entry-title">
+        <a href="https://www.radiant.edu.in/" target="_blank" style="color:white;">HSC — Commerce (Applied Mathematics)</a>
+      </div>
+      <div class="entry-sub">Radiant English Academy, Surat &nbsp;<a href="https://maps.google.com/?q=Radiant+Academy+Surat" target="_blank">📍</a></div>
+      <ul class="bullets">
+        <li>Strong foundation in Mathematics, Accounts, Economics, and Business Studies.</li>
+        <li>Developed logical reasoning, numerical analysis, and quantitative problem-solving.</li>
+        <li>Gained understanding of financial concepts, business operations, and economic fundamentals.</li>
+      </ul>
+    </div>
+    <div class="entry-date">2022 – 2024</div>
+  </div>
 </div>
 </div>
 
-<div class="skill-row">
-<div class="skill-title">App Development</div>
-<div class="skill-items">
-<span class="tooltip" data-tip="Frontend UI library">React</span> ·
-<span class="tooltip" data-tip="AI-powered app builder">Lovable</span> ·
-<span class="tooltip" data-tip="Excel file generation in-browser">SheetJS</span> ·
-<span class="tooltip" data-tip="No-code / Low-code tools">No-Code / Low-Code</span>
+<!-- ═══════════════ SKILLS ═══════════════ -->
+<div class="page hidden" id="pg-skills">
+<div class="card scrollable">
+  <div class="page-header">
+    <button class="back-btn" onclick="go('landing')">← Back</button>
+    <div class="page-title">⚡ Skills</div>
+  </div>
+
+  <table class="skill-table">
+    <tr><td class="skill-label">Programming</td><td class="skill-val">
+      <span class="tip" title="Core language for data & apps">Python</span> ·
+      <span class="tip" title="Data manipulation">Pandas</span> ·
+      <span class="tip" title="Numerical computing">NumPy</span> ·
+      <span class="tip" title="Statistical visualisation">Seaborn</span> ·
+      <span class="tip" title="Graph plotting">Matplotlib</span>
+    </td></tr>
+    <tr><td class="skill-label">Databases</td><td class="skill-val">
+      <span class="tip" title="Query language">SQL</span> ·
+      <span class="tip" title="Relational database">PostgreSQL</span> ·
+      <span class="tip" title="Backend-as-a-service + Realtime">Supabase</span>
+    </td></tr>
+    <tr><td class="skill-label">App Dev</td><td class="skill-val">
+      <span class="tip" title="Frontend UI library">React</span> ·
+      <span class="tip" title="AI-powered app builder">Lovable</span> ·
+      <span class="tip" title="Excel export in-browser">SheetJS</span> ·
+      <span class="tip" title="Interactive charts">Recharts</span> ·
+      No-Code / Low-Code
+    </td></tr>
+    <tr><td class="skill-label">Visualisation</td><td class="skill-val">
+      Power BI · Microsoft Excel · Plotly
+    </td></tr>
+    <tr><td class="skill-label">Analytical</td><td class="skill-val">
+      EDA · Data Wrangling · Statistical Thinking · Business Analysis · Sales Analysis
+    </td></tr>
+    <tr><td class="skill-label">Soft Skills</td><td class="skill-val">
+      Attention to Detail · Adaptability · Communication · Time Management · Resilience
+    </td></tr>
+    <tr><td class="skill-label">Languages</td><td class="skill-val">
+      English · Gujarati · Hindi
+    </td></tr>
+  </table>
 </div>
 </div>
 
-<div class="skill-row">
-<div class="skill-title">Visualisation</div>
-<div class="skill-items">
-<span class="tooltip" data-tip="Interactive dashboards">Power BI</span> ·
-<span class="tooltip" data-tip="Spreadsheet analysis">Microsoft Excel</span> ·
-<span class="tooltip" data-tip="Interactive charts">Plotly / Recharts</span>
+<!-- ═══════════════ EXPERIENCE ═══════════════ -->
+<div class="page hidden" id="pg-experience">
+<div class="card scrollable">
+  <div class="page-header">
+    <button class="back-btn" onclick="go('landing')">← Back</button>
+    <div class="page-title">💼 Experience</div>
+  </div>
+
+  <div class="entry">
+    <div>
+      <div class="entry-title">
+        Summer Intern — Business &amp; Technology
+        <span class="badge badge-app">🚀 App Built</span>
+      </div>
+      <div class="entry-sub"><a href="https://seemaplastics.com/" target="_blank">Mahavir Plastic Agency</a>, Surat</div>
+      <ul class="bullets">
+        <li>Independently designed, built, and deployed a full-stack B2B Sales and Order Management application used live by the sales team across 12 Gujarat routes and 2,000+ dealer accounts.</li>
+        <li>Engineered a 1,700+ SKU product catalogue across 2 brands with a custom price-code obfuscation system and role-based access control using React and Supabase.</li>
+        <li>Built WhatsApp-style structured order placement with product search, spare-parts photo capture, partial delivery tracking (item-level), and one-click Excel/PDF exports.</li>
+        <li>Implemented a full admin analytics dashboard with route performance heatmaps, salesman leaderboards, and real-time order conversion KPIs.</li>
+        <li>Assisted in inventory analysis, B2B sales coordination, and daily business operations, gaining exposure to wholesale and retail trade workflows.</li>
+      </ul>
+      <div class="tags">
+        <span class="tag">React</span><span class="tag">Supabase</span><span class="tag">PostgreSQL</span>
+        <span class="tag">Lovable</span><span class="tag">SheetJS</span><span class="tag">Recharts</span>
+        <span class="tag">B2B</span><span class="tag">Real-time DB</span>
+      </div>
+    </div>
+    <div class="entry-date">Apr 2025 – Jul 2025</div>
+  </div>
+
+  <div class="entry">
+    <div>
+      <div class="entry-title">BRM Trainee — Internship</div>
+      <div class="entry-sub"><a href="https://www.gozoop.com/" target="_blank">Gozoop Group</a>, Mumbai (Hybrid)</div>
+      <ul class="bullets">
+        <li>Monitored and analysed customer sentiment across digital platforms to evaluate brand perception and engagement trends.</li>
+        <li>Assisted in execution and coordination of brand campaigns, ensuring smooth stakeholder communication.</li>
+        <li>Supported client servicing by preparing reports, tracking campaign performance, and maintaining workflow efficiency.</li>
+        <li>Gained hands-on exposure to digital marketing strategies, brand management, and real-time business decision processes.</li>
+      </ul>
+    </div>
+    <div class="entry-date">Dec 2024 – Jan 2025</div>
+  </div>
 </div>
 </div>
 
-<div class="skill-row">
-<div class="skill-title">Analytical</div>
-<div class="skill-items">
-<span class="tooltip" data-tip="Exploratory Data Analysis">EDA</span> ·
-<span class="tooltip" data-tip="Cleaning raw data">Data Wrangling</span> ·
-<span class="tooltip" data-tip="Statistical insights">Statistical Thinking</span> ·
-<span class="tooltip" data-tip="Business decision making">Business Analysis</span> ·
-<span class="tooltip" data-tip="Sales data analysis">Sales Analysis</span>
-</div>
-</div>
+<!-- ═══════════════ PROJECTS ═══════════════ -->
+<div class="page hidden" id="pg-projects">
+<div class="card scrollable">
+  <div class="page-header">
+    <button class="back-btn" onclick="go('landing')">← Back</button>
+    <div class="page-title">🚀 Projects</div>
+  </div>
 
-<div class="skill-row">
-<div class="skill-title">Soft Skills</div>
-<div class="skill-items">
-Attention to Detail · Adaptability · Communication · Time Management · Resilience
-</div>
-</div>
+  <!-- P1 flagship -->
+  <div class="entry">
+    <div>
+      <div class="entry-title">
+        B2B Sales, Catalogue &amp; Order Management Platform
+        <span class="badge badge-live">● Live</span>
+      </div>
+      <div class="entry-sub">Mahavir Plastic Agency · Full-stack production web app</div>
+      <ul class="bullets">
+        <li>Sole designer and builder of a mobile-first web application serving a real wholesale business across 12 Gujarat routes and 2,000+ dealer accounts.</li>
+        <li>Built a 1,700+ SKU catalogue with a proprietary price-code obfuscation system so salesmen never see real trade prices.</li>
+        <li>Developed structured order-taking UI with in-memory instant product search, colour selection, spare-parts photo capture (camera + gallery), and no-order visit logging with reason codes.</li>
+        <li>Full admin panel: route-wise analytics, salesman leaderboards, partial delivery tracking (item-level checkboxes), real-time notifications, bulk Excel export, A4 print, WhatsApp sharing.</li>
+        <li>Deployed on Supabase (PostgreSQL + Auth + Storage + Realtime) with row-level security, role-based routing, and automatic 21-day order archiving.</li>
+      </ul>
+      <div class="tags">
+        <span class="tag">React</span><span class="tag">Supabase</span><span class="tag">PostgreSQL</span>
+        <span class="tag">Lovable AI</span><span class="tag">SheetJS</span><span class="tag">Recharts</span>
+        <span class="tag">Realtime</span><span class="tag">Role-based Auth</span>
+      </div>
+    </div>
+  </div>
 
-<div class="skill-row">
-<div class="skill-title">Languages</div>
-<div class="skill-items">English · Gujarati · Hindi</div>
-</div>
+  <!-- P2 -->
+  <div class="entry">
+    <div>
+      <div class="entry-title">Cyber Crime Analysis in India (2017–2022)</div>
+      <div class="entry-sub">Python · Pandas · Matplotlib · EDA</div>
+      <ul class="bullets">
+        <li>End-to-end EDA on a district-wise cybercrime dataset with 5,322 rows and 45 crime categories.</li>
+        <li>Identified trend: total offences rose from 7,976 (2017) to 33,786 (2022); cheating impersonation as the top category.</li>
+        <li>State-wise analysis — Telangana and Maharashtra as highest-crime states; tracked OTP, ATM, and card fraud across six years.</li>
+        <li>What-If scenario analysis on demonetisation's impact on counterfeit currency using line plots.</li>
+      </ul>
+      <a class="proj-link" href="https://colab.research.google.com/drive/1PFQq9sIH413Xp2iMwLSeTnRBF-WwsUwB" target="_blank">↗ View on Google Colab</a>
+    </div>
+  </div>
 
-</div>
-</div>
+  <!-- P3 -->
+  <div class="entry">
+    <div>
+      <div class="entry-title">WHO Global Air Quality Data Analysis</div>
+      <div class="entry-sub">Python · Seaborn · NumPy · Time-series Analysis</div>
+      <ul class="bullets">
+        <li>Cleaned and profiled a large-scale WHO dataset with 32,000+ rows; forward-fill imputation for PM2.5 and PM10.</li>
+        <li>Engineered pollution category features (Clean → Highly Polluted) using quartile-based binning across PM2.5, PM10, NO2.</li>
+        <li>Identified top 10 most polluted cities; revealed strong correlation (r ≈ 0.87) between PM2.5 and PM10 via Seaborn heatmap.</li>
+        <li>Analysed seasonal forest fire impacts on air quality across 7 global locations through time-series plots.</li>
+      </ul>
+      <a class="proj-link" href="https://colab.research.google.com/drive/1BIMRKQDilxPZ3XPUgp_n8vHRVhVyd1Py" target="_blank">↗ View on Google Colab</a>
+    </div>
+  </div>
 
-<!-- EXPERIENCE -->
-<div id="experience" class="center hidden">
-<div class="box">
-<button class="back-btn" onclick="showPage('profile')">← Back</button>
-<h2>Experience</h2>
+  <!-- P4 -->
+  <div class="entry">
+    <div>
+      <div class="entry-title">Interactive AI-Powered Portfolio Website</div>
+      <div class="entry-sub">HTML · CSS · JavaScript · Prompt Engineering</div>
+      <ul class="bullets">
+        <li>Designed and developed a fully responsive interactive CV website with animated canvas background.</li>
+        <li>Implemented clean UI/UX with dynamic section navigation, tooltips, and glassmorphism design.</li>
+      </ul>
+      <a class="proj-link" href="https://skavya911.github.io/kavya-cv/" target="_blank">↗ View Live Site</a>
+    </div>
+  </div>
 
-<!-- MAHAVIR -->
-<div class="edu-row">
-<div style="flex:1">
-<div class="edu-title">
-Summer Intern — Business &amp; Technology <span class="badge">🚀 App Built</span>
-</div>
-<div class="edu-sub"><a href="https://seemaplastics.com/" target="_blank">Mahavir Plastic Agency</a>, Surat</div>
-<div class="edu-learn">
-– Independently designed, built, and deployed a full-stack B2B Sales and Order Management application used live by the business's sales team across 12 Gujarat routes and 2,000+ dealer accounts.<br>
-– Engineered a 1,700+ SKU product catalogue across 2 brands with a custom price-code obfuscation system and role-based access control using React and Supabase.<br>
-– Built WhatsApp-style structured order placement with product search, spare-parts photo capture, partial delivery tracking (item-level), and one-click Excel/PDF exports.<br>
-– Implemented a full admin analytics dashboard with route performance heatmaps, salesman leaderboards, and real-time order conversion KPIs.<br>
-– Assisted in inventory analysis, B2B sales coordination, and daily business operations.
-</div>
-<div style="margin-top:10px;">
-<span class="tag">React</span><span class="tag">Supabase</span><span class="tag">PostgreSQL</span>
-<span class="tag">Lovable</span><span class="tag">SheetJS</span><span class="tag">Recharts</span>
-<span class="tag">B2B</span><span class="tag">Real-time DB</span>
-</div>
-</div>
-<div class="date-col">Apr 2025 – Jul 2025</div>
-</div>
-
-<hr class="section-divider">
-
-<!-- GOZOOP -->
-<div class="edu-row">
-<div style="flex:1">
-<div class="edu-title">
-<a href="https://www.gozoop.com/" target="_blank">BRM Trainee — Gozoop Group</a>
-</div>
-<div class="edu-sub">Internship, Mumbai (Hybrid)</div>
-<div class="edu-learn">
-– Monitored and analysed customer sentiment across digital platforms to evaluate brand perception and engagement trends.<br>
-– Assisted in execution and coordination of brand campaigns, ensuring smooth stakeholder communication.<br>
-– Supported client servicing by preparing reports, tracking campaign performance, and maintaining workflow efficiency.<br>
-– Gained exposure to digital marketing strategies, brand management, and real-time business decision processes.
-</div>
-</div>
-<div class="date-col">Dec 2024 – Jan 2025</div>
-</div>
-
-</div>
-</div>
-
-<!-- PROJECTS -->
-<div id="projects" class="center hidden">
-<div class="box">
-<button class="back-btn" onclick="showPage('profile')">← Back</button>
-<h2>Projects</h2>
-
-<!-- PROJECT 1 — FLAGSHIP -->
-<div class="edu-row">
-<div style="flex:1">
-<div class="edu-title">
-B2B Sales, Catalogue &amp; Order Management Platform — Mahavir Plastic Agency <span class="badge">Live</span>
-</div>
-<div class="edu-learn">
-– Sole designer and builder of a production-ready mobile-first web application serving a real wholesale business operating across 12 Gujarat routes and 2,000+ dealer accounts.<br>
-– Built a 1,700+ SKU product catalogue across Seema Moulded Furniture and Seema Gold Home Appliances with a proprietary price-code system so salesmen never see real trade prices.<br>
-– Developed structured order-taking UI with in-memory instant product search, colour selection, spare-parts photo capture (camera + gallery), and no-order visit logging with reason codes.<br>
-– Implemented full admin panel: route-wise analytics, salesman leaderboards, partial delivery tracking (item-level checkboxes), real-time notifications, bulk Excel export, A4 print, and WhatsApp sharing.<br>
-– Deployed on Supabase (PostgreSQL + Auth + Storage + Realtime) with row-level security, role-based routing, and automatic 21-day order archiving.
-</div>
-<div style="margin-top:10px;">
-<span class="tag">React</span><span class="tag">Supabase</span><span class="tag">PostgreSQL</span>
-<span class="tag">Lovable AI</span><span class="tag">SheetJS</span><span class="tag">Recharts</span>
-<span class="tag">Real-time</span><span class="tag">Role-based Auth</span>
-</div>
-</div>
-</div>
-
-<hr class="section-divider">
-
-<!-- PROJECT 2 -->
-<div class="edu-row">
-<div style="flex:1">
-<div class="edu-title">Cyber Crime Analysis in India (2017–2022)</div>
-<div class="edu-learn">
-– End-to-end EDA on a district-wise cybercrime dataset with 5,322 rows and 45 crime categories using Python, Pandas, and Matplotlib.<br>
-– Identified yearly trend: total offences rose from 7,976 (2017) to 33,786 (2022); cheating impersonation as top category.<br>
-– State-wise analysis revealed Telangana and Maharashtra as highest-crime states; tracked OTP, ATM, and card fraud across six years.<br>
-– Designed a What-If scenario analysis on demonetisation's impact on counterfeit currency using line plots.
-</div>
-<div style="margin-top:8px;"><span class="tag">Python</span><span class="tag">Pandas</span><span class="tag">Matplotlib</span><span class="tag">EDA</span></div>
-<a class="project-link" href="https://colab.research.google.com/drive/1PFQq9sIH413Xp2iMwLSeTnRBF-WwsUwB" target="_blank">View Project →</a>
-</div>
-</div>
-
-<hr class="section-divider">
-
-<!-- PROJECT 3 -->
-<div class="edu-row">
-<div style="flex:1">
-<div class="edu-title">WHO Global Air Quality Data Analysis</div>
-<div class="edu-learn">
-– Cleaned and profiled a large-scale WHO dataset with 32,000+ rows, handling missing values through forward-fill imputation for PM2.5 and PM10.<br>
-– Engineered pollution category features (Clean → Highly Polluted) using quartile-based binning across PM2.5, PM10, and NO2.<br>
-– Identified top 10 most polluted cities globally; revealed strong correlation (r ≈ 0.87) between PM2.5 and PM10 via Seaborn heatmap.<br>
-– Analysed seasonal forest fire impacts on air quality across 7 global locations through time-series plots.
-</div>
-<div style="margin-top:8px;"><span class="tag">Python</span><span class="tag">Seaborn</span><span class="tag">NumPy</span><span class="tag">EDA</span></div>
-<a class="project-link" href="https://colab.research.google.com/drive/1BIMRKQDilxPZ3XPUgp_n8vHRVhVyd1Py" target="_blank">View Project →</a>
-</div>
-</div>
-
-<hr class="section-divider">
-
-<!-- PROJECT 4 -->
-<div class="edu-row">
-<div style="flex:1">
-<div class="edu-title">Interactive AI-Powered Portfolio Website</div>
-<div class="edu-learn">
-– Designed and developed a fully responsive personal portfolio website using prompt engineering and front-end skills.<br>
-– Implemented clean UI/UX principles with dynamic sections for projects, skills, and experience.
-</div>
-<div style="margin-top:8px;"><span class="tag">HTML/CSS</span><span class="tag">JavaScript</span><span class="tag">AI Prompting</span></div>
-<a class="project-link" href="https://skavya911.github.io/kavya-cv/" target="_blank">View Project →</a>
-</div>
-</div>
-
-<hr class="section-divider">
-
-<!-- PROJECT 5 -->
-<div class="edu-row">
-<div style="flex:1">
-<div class="edu-title">Economics Research — Video Production &amp; Analysis</div>
-<div class="edu-learn">
-– Collaborated on an economics research project involving data analysis and structured presentation.<br>
-– Led full video production: scripting, recording, and post-production.<br>
-– Translated complex economic concepts into engaging visual storytelling.
-</div>
-<a class="project-link" href="https://drive.google.com/file/d/1SjSTwyiQJ12FSz5enSVoUT-V4o3So1x1/view" target="_blank">View Project →</a>
-</div>
-</div>
+  <!-- P5 -->
+  <div class="entry">
+    <div>
+      <div class="entry-title">Economics Research — Video Production &amp; Analysis</div>
+      <div class="entry-sub">Economics Research · Video Production · Data Presentation</div>
+      <ul class="bullets">
+        <li>Collaborated on an economics research project involving data analysis and structured presentation.</li>
+        <li>Led full video production: scripting, recording, and post-production; translated complex concepts into visual storytelling.</li>
+      </ul>
+      <a class="proj-link" href="https://drive.google.com/file/d/1SjSTwyiQJ12FSz5enSVoUT-V4o3So1x1/view" target="_blank">↗ View Project</a>
+    </div>
+  </div>
 
 </div>
 </div>
 
-<!-- HOBBIES -->
-<div id="hobbies" class="center hidden">
-<div class="box">
-<button class="back-btn" onclick="showPage('profile')">← Back</button>
-<h2>Hobbies &amp; Interests</h2>
+<!-- ═══════════════ HOBBIES ═══════════════ -->
+<div class="page hidden" id="pg-hobbies">
+<div class="card scrollable">
+  <div class="page-header">
+    <button class="back-btn" onclick="go('landing')">← Back</button>
+    <div class="page-title">🎨 Hobbies &amp; Interests</div>
+  </div>
 
-<div class="edu-row">
-<div style="flex:1">
-<div class="edu-title">🎬 Video Editing &amp; Visual Storytelling</div>
-<div class="edu-learn">
-– Passionate about cinematic video editing with hands-on experience in scripting, editing, and post-production workflows.<br>
-– Created multiple edited videos showcasing storytelling, transitions, and visual composition techniques.<br>
-– Demonstrates creativity, visual thinking, and content presentation skills relevant to modern digital platforms.
-</div>
-</div>
-</div>
+  <div class="hobby-card">
+    <div class="hobby-title">🎬 Video Editing &amp; Visual Storytelling</div>
+    <ul class="hobby-body">
+      <li>Passionate about cinematic video editing with hands-on experience in scripting, editing, and post-production workflows.</li>
+      <li>Created multiple edited videos showcasing storytelling, transitions, and visual composition techniques.</li>
+      <li>Demonstrates creativity, visual thinking, and content presentation skills relevant to modern digital platforms.</li>
+    </ul>
+  </div>
 
-<hr class="section-divider">
-
-<div class="edu-row">
-<div style="flex:1">
-<div class="edu-title">🎤 Hip-Hop Culture &amp; Music</div>
-<div class="edu-learn">
-– Strong interest in hip-hop culture, actively attending live concerts and music events.<br>
-– Personally interacted with artists, engaging in conversations about their creative process and upcoming releases.<br>
-– Documented experiences through photos and videos — demonstrates confidence and communication skills.
-</div>
-</div>
-</div>
+  <div class="hobby-card">
+    <div class="hobby-title">🎤 Hip-Hop Culture &amp; Music</div>
+    <ul class="hobby-body">
+      <li>Strong interest in hip-hop culture, actively attending live concerts and music events across India.</li>
+      <li>Personally interacted with artists, engaging in conversations about their creative process and upcoming releases.</li>
+      <li>Documented experiences through photography and video — demonstrates confidence and strong communication skills.</li>
+    </ul>
+  </div>
 
 </div>
 </div>
 
 <script>
-function openCV() {
-    document.getElementById("landing").classList.add("hidden");
-    document.getElementById("profile").classList.remove("hidden");
-}
-function showPage(page) {
-    ["profile","education","skills","experience","projects","hobbies"].forEach(id => {
-        document.getElementById(id).classList.add("hidden");
-    });
-    document.getElementById(page).classList.remove("hidden");
+/* ── PAGE NAV ── */
+const pages = ['landing','profile','education','skills','experience','projects','hobbies'];
+function go(id) {
+  pages.forEach(p => document.getElementById('pg-'+p).classList.add('hidden'));
+  document.getElementById('pg-'+id).classList.remove('hidden');
+  window.scrollTo(0,0);
 }
 
-/* ANIMATED BACKGROUND */
-const canvas = document.getElementById("bg");
-const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-window.addEventListener("resize", () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+function revealNav() {
+  document.getElementById('view-cv-wrap').classList.add('hidden');
+  document.getElementById('nav-grid').classList.remove('hidden');
+}
+
+/* ── CURSOR GLOW ── */
+const glow = document.getElementById('glow');
+document.addEventListener('mousemove', e => {
+  glow.style.left = e.clientX + 'px';
+  glow.style.top  = e.clientY + 'px';
 });
 
-let texts = [
-    "print()", "pd.DataFrame()", "pd.sort_values()", ".groupby()", ".merge()",
-    "SELECT", "WHERE", "JOIN", "GROUP BY", "HAVING",
-    "supabase.from()", ".upsert()", ".select()", ".eq()", "useState()",
-    "React", "Supabase", "PostgreSQL", "SheetJS", "Recharts",
-    "Z-score", "IQR", "Q1", "Q3", "StandardScaler()",
-    "MinMaxScaler()", "cut()", "qcut()", "axis=1",
-    "EDA", "Scaling", "Normalization", "Feature Engineering",
-    "Mean", "Median", "Outliers", "Correlation", "r=0.87",
-    "Power BI", "Excel", "seaborn.heatmap()", "plt.plot()",
-    "No-Code", "Low-Code", "AI Builder", "Role-Based Auth",
-    "B2B", "SaaS", "REST API", "Real-time"
+/* ── ANIMATED BACKGROUND ── */
+const canvas = document.getElementById('bg');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const words = [
+  'print()', 'pd.DataFrame()', 'pd.sort_values()', '.groupby()', '.merge()',
+  'SELECT', 'WHERE', 'JOIN', 'GROUP BY', 'HAVING', 'ORDER BY',
+  'supabase.from()', '.upsert()', '.select()', '.eq()', '.insert()',
+  'useState()', 'useEffect()', 'React', 'Supabase', 'PostgreSQL',
+  'SheetJS', 'Recharts', 'RLS', 'Auth', 'Realtime',
+  'Z-score', 'IQR', 'Q1', 'Q3', 'StandardScaler()',
+  'EDA', 'Correlation', 'r=0.87', 'Normalization',
+  'Power BI', 'seaborn.heatmap()', 'plt.plot()', 'np.mean()',
+  'No-Code', 'Low-Code', 'AI Builder', 'Role-Based Auth',
+  'B2B', 'SaaS', 'REST API', 'Real-time', 'Analytics'
 ];
 
-let particles = [];
-for (let i = 0; i < 130; i++) {
-    particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        text: texts[Math.floor(Math.random() * texts.length)],
-        speedY: Math.random() * 0.7 + 0.25,
-        opacity: Math.random() * 0.12 + 0.05
-    });
-}
+let particles = Array.from({length: 140}, () => ({
+  x: Math.random() * window.innerWidth,
+  y: Math.random() * window.innerHeight,
+  word: words[Math.floor(Math.random() * words.length)],
+  vy: Math.random() * 0.55 + 0.2,
+  alpha: Math.random() * 0.09 + 0.03
+}));
 
-function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.font = "12px monospace";
-    particles.forEach(p => {
-        ctx.fillStyle = `rgba(255,255,255,${p.opacity})`;
-        ctx.fillText(p.text, p.x, p.y);
-        p.y += p.speedY;
-        if (p.y > canvas.height) { p.y = 0; p.x = Math.random() * canvas.width; }
-    });
-    requestAnimationFrame(animate);
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.font = '11px JetBrains Mono, monospace';
+  particles.forEach(p => {
+    ctx.fillStyle = `rgba(148,163,184,${p.alpha})`;
+    ctx.fillText(p.word, p.x, p.y);
+    p.y += p.vy;
+    if (p.y > canvas.height + 20) {
+      p.y = -20;
+      p.x = Math.random() * canvas.width;
+      p.word = words[Math.floor(Math.random() * words.length)];
+    }
+  });
+  requestAnimationFrame(draw);
 }
-animate();
+draw();
 </script>
-
 </body>
 </html>
-"""
-
-class Handler(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-        self.wfile.write(HTML.encode())
-    def log_message(self, format, *args):
-        pass
-
-with socketserver.TCPServer(("", PORT), Handler) as httpd:
-    print(f"CV running at http://localhost:{PORT}")
-    httpd.serve_forever()
